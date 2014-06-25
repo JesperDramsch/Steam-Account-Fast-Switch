@@ -24,12 +24,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 :license
 
+
+
 IF NOT EXIST config.cmd (
 echo Detected first run.
 echo Launchig Configuration
 copy /y NUL config.cmd > NUL
 echo @echo off > config.cmd
-IF NOT EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
+IF EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
 echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
 echo Steam installation found!
 ) else (
@@ -37,7 +39,16 @@ echo Your Steam installation could not be detected automatically.
 set /p SteamLoc="Please input manually: "
 echo set "SteamLoc=!SteamLoc!" >> config.cmd
 )
+set i_count=0
+:Add Logins
+set /A i_count=%i_count%+1
+set /p id="Please input SteamID: "
+echo set "id!i_count!=!id!" >> config.cmd
+set /p "another=Would you like to add another SteamID (y/n): "
+if "!another!"=="y" (goto Add Logins )
 )
+timeout /T 5  > nul
+exit
 
 call config.cmd
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
