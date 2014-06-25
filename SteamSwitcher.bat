@@ -22,12 +22,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 :license
+set SteamLoc=C:\Program Files (x86)\Steam\Steam.exe
 
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 if "%ERRORLEVEL%"=="0" (
 echo Program is running
 set yup=1
-@"C:\Program Files (x86)\Steam\Steam.exe" -shutdown
+@"%SteamLoc%" -shutdown
 timeout /T 2  > nul
 ) 
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
@@ -48,5 +49,5 @@ set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecur
         [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
 for /f "usebackq delims=" %%p in (`%psCommand%`) do set password=%%p
 echo Starting up
-start "" "C:\Program Files (x86)\Steam\Steam.exe" -login "%id%" "%password%"
+start "" "%SteamLoc%" -login "%id%" "%password%"
 exit
