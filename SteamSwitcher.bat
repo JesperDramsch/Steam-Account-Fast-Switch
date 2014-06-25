@@ -24,8 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 :license
 
-
-
+: Run Start Configuration
 IF NOT EXIST config.cmd (
 	echo Detected first run.
 	echo Launchig Configuration
@@ -47,7 +46,8 @@ IF NOT EXIST config.cmd (
 	set /A i_count=%i_count%+1
 	if "!another!"=="y" (goto Add Logins )
 )
-
+timeout /T 1 > nul
+: Import Config
 call config.cmd
 echo.
 echo The following options are available:
@@ -80,7 +80,9 @@ IF %choice% == X (
 		exit
 	)
 )
+echo.
 
+:Check if Program is running and shut down (first nice then rigorously)
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 IF "%ERRORLEVEL%"=="0" (
 echo Program is running
@@ -100,10 +102,15 @@ echo Program shut down
 echo Program not running
 )
 )
+
+:Password (secure)
 set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecureString ; ^
     $BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^
         [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
 FOR /f "usebackq delims=" %%p in (`%psCommand%`) DO set password=%%p
+
+:Start Steam with direct Log in
 echo Starting up
 start "" "%SteamLoc%" -login "%login%" "%password%"
+
 EXIT
