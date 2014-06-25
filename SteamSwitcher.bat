@@ -1,4 +1,5 @@
 @echo off
+SETLOCAL enabledelayedexpansion
 goto license
 The MIT License (MIT)
 
@@ -22,8 +23,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 :license
-set SteamLoc=C:\Program Files (x86)\Steam\Steam.exe
 
+IF NOT EXIST config.cmd (
+echo Detected first run.
+echo Launchig Configuration
+copy /y NUL config.cmd > NUL
+echo @echo off > config.cmd
+IF NOT EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
+echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
+echo Steam installation found!
+) else (
+echo Your Steam installation could not be detected automatically.
+set /p SteamLoc="Please input manually: "
+echo set "SteamLoc=!SteamLoc!" >> config.cmd
+)
+)
+
+call config.cmd
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 IF "%ERRORLEVEL%"=="0" (
 echo Program is running
