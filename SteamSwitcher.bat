@@ -48,5 +48,5 @@ set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecur
         [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
 for /f "usebackq delims=" %%p in (`%psCommand%`) do set password=%%p
 echo Starting up
-@"C:\Program Files (x86)\Steam\Steam.exe" -login "%id%" "%password%"
+start "" "C:\Program Files (x86)\Steam\Steam.exe" -login "%id%" "%password%"
 exit
