@@ -27,30 +27,60 @@ SOFTWARE.
 
 
 IF NOT EXIST config.cmd (
-echo Detected first run.
-echo Launchig Configuration
-copy /y NUL config.cmd > NUL
-echo @echo off > config.cmd
-IF EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
-echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
-echo Steam installation found!
-) else (
-echo Your Steam installation could not be detected automatically.
-set /p SteamLoc="Please input manually: "
-echo set "SteamLoc=!SteamLoc!" >> config.cmd
+	echo Detected first run.
+	echo Launchig Configuration
+	copy /y NUL config.cmd > NUL
+	echo @echo off > config.cmd
+	IF EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
+		echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
+		echo Steam installation found!
+	) else (
+		echo Your Steam installation could not be detected automatically.
+		set /p SteamLoc="Please input manually: "
+		echo set "SteamLoc=!SteamLoc!" >> config.cmd
+	)
+	set i_count=0
+	:Add Logins
+	set /p id="Please input SteamID: "
+	echo set "id[!i_count!]=!id!" >> config.cmd
+	set /p "another=Would you like to add another SteamID (y/n): "
+	set /A i_count=%i_count%+1
+	if "!another!"=="y" (goto Add Logins )
 )
-set i_count=0
-:Add Logins
-set /A i_count=%i_count%+1
-set /p id="Please input SteamID: "
-echo set "id!i_count!=!id!" >> config.cmd
-set /p "another=Would you like to add another SteamID (y/n): "
-if "!another!"=="y" (goto Add Logins )
-)
-timeout /T 5  > nul
-exit
 
 call config.cmd
+echo.
+echo The following options are available:
+set i_count=0
+:Read Array
+IF [!id[%i_count%]!] == [] (
+	echo X.^> Add another account
+) else (
+	echo %i_count%.^> !id[%i_count%]!
+	set /A i_count=%i_count%+1
+	goto Read Array
+)
+echo.
+set /p "choice=Your choice: "
+IF %choice% == X (
+	goto Add Logins
+) ELSE (
+	IF %choice% GEQ 0 (
+		IF %choice% LEQ %i_count%  (
+			set "login=!id[%choice%]!"
+			echo WIll now switch account to !login!
+		) ELSE (
+			GOTO Wrong Choice
+		)
+	) ELSE (
+		:Wrong Choice
+		echo Your choice is invalid.
+		echo Exiting.
+		timeout /T 5  > nul
+		exit
+	)
+)
+
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 IF "%ERRORLEVEL%"=="0" (
 echo Program is running
@@ -70,11 +100,10 @@ echo Program shut down
 echo Program not running
 )
 )
-set /p id="Enter SteamID: "
 set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecureString ; ^
     $BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^
         [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)""
 FOR /f "usebackq delims=" %%p in (`%psCommand%`) DO set password=%%p
 echo Starting up
-start "" "%SteamLoc%" -login "%id%" "%password%"
+start "" "%SteamLoc%" -login "%login%" "%password%"
 EXIT
