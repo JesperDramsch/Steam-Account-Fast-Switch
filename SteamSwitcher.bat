@@ -36,7 +36,7 @@ IF NOT EXIST config.cmd (
 		echo Steam installation found!
 	) else (
 		IF EXIST "%PROGRAMFILES%\Steam\Steam.exe" (
-			:Automatically Detect Steam for 32 bit
+			:Automagically Detect Steam for 32 bit
 			echo set "SteamLoc=%PROGRAMFILES%\Steam\Steam.exe" >> config.cmd
 			echo Steam installation found!
 		) else (
@@ -60,7 +60,7 @@ IF NOT EXIST config.cmd (
 	if "!another!"=="y" (goto Add Logins )
 )
 timeout /T 1 > nul
-: Import Config
+:Import Config
 call config.cmd
 echo.
 echo The following options are available:
@@ -98,22 +98,22 @@ echo.
 :Check if Program is running and shut down (first nice then rigorously)
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 IF "%ERRORLEVEL%"=="0" (
-echo Program is running
-set yup=1
-@"%SteamLoc%" -shutdown
-timeout /T 2  > nul
+	echo Program is running
+	set yup=1
+	@"%SteamLoc%" -shutdown
+	timeout /T 2  > nul
 ) 
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
 IF "%ERRORLEVEL%"=="0" (
-echo Attempting force close
-taskkill /F /IM steam.exe
-echo Program shut down
+	echo Attempting force close
+	taskkill /F /IM steam.exe
+	echo Program shut down
 ) ELSE (
-IF "%yup%"=="1" (
-echo Program shut down
-) ELSE (
-echo Program not running
-)
+	IF "%yup%"=="1" (
+		echo Program shut down
+	) ELSE (
+		echo Program not running
+	)
 )
 
 :Password (secure)
