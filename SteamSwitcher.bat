@@ -30,19 +30,26 @@ IF NOT EXIST config.cmd (
 	echo Launchig Configuration
 	copy /y NUL config.cmd > NUL
 	echo @echo off > config.cmd
-	IF NOT EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
+	IF EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
+		:Automatically Detect Steam for 64 bit
 		echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
 		echo Steam installation found!
 	) else (
-		:Manually
-		echo Your Steam installation could not be detected automatically.
-		set /p "SteamLoc=Please input manually: "
-		IF NOT EXIST "!SteamLoc!" ( 
-			echo Not valid
-			goto Manually
+		IF EXIST "%PROGRAMFILES%\Steam\Steam.exe" (
+			:Automatically Detect Steam for 32 bit
+			echo set "SteamLoc=%PROGRAMFILES%\Steam\Steam.exe" >> config.cmd
+			echo Steam installation found!
+		) else (
+			:Manually
+			echo Your Steam installation could not be detected automatically.
+			set /p "SteamLoc=Please input manually: "
+			IF NOT EXIST "!SteamLoc!" ( 
+				echo Not valid
+				goto Manually
+			)
+			echo Location is valid
+			echo set "SteamLoc=!SteamLoc!" >> config.cmd
 		)
-		echo Location is valid
-		echo set "SteamLoc=!SteamLoc!" >> config.cmd
 	)
 	set i_count=0
 	:Add Logins
