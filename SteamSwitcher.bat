@@ -74,6 +74,7 @@ IF [!id[%i_count%]!] == [] (
 	goto Read Array
 )
 echo.
+:Account picker
 set /p "choice=Your choice: "
 IF %choice% == X (
 	goto Add Logins
