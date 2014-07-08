@@ -30,6 +30,7 @@ IF NOT EXIST config.cmd (
 	echo Launchig Configuration
 	copy /y NUL config.cmd > NUL
 	echo @echo off > config.cmd
+	echo set firstrun=0 >> config.cmd
 	IF EXIST "%PROGRAMFILES(X86)%\Steam\Steam.exe" (
 		:Automatically Detect Steam for 64 bit
 		echo set "SteamLoc=%PROGRAMFILES(X86)%\Steam\Steam.exe" >> config.cmd
@@ -51,59 +52,123 @@ IF NOT EXIST config.cmd (
 			echo set "SteamLoc=!SteamLoc!" >> config.cmd
 		)
 	)
-	set i_count=0
-	:Add Logins
-	set /p id="Please input SteamID: "
-	echo set "id[!i_count!]=!id!" >> config.cmd
-	set /p "another=Would you like to add another SteamID (y/n): "
-	set /A i_count=%i_count%+1
-	if "!another!"=="y" (goto Add Logins )
+	IF NOT EXIST history.cmd (
+		copy /y NUL history.cmd > NUL
+		:Default Choices
+		echo @echo off > history.cmd
+		echo set default_id=X >> history.cmd
+		echo set default_app=X >> history.cmd
+		echo set default_manager=N >> history.cmd
+	)
 	
-	:Default Choices
-	set default_id=X
+	set i_idcount=0
+	set i_appcount=0
+	:AddLogins
+	set /p id="Please input SteamID: "
+	echo set "id[!i_idcount!]=!id!" >> config.cmd
+	choice /T 3 /D N /M "Would you like to add another SteamID"
+	set /A i_idcount=%i_idcount%+1
+	if ERRORLEVEL == 2 (
+		if !firstrun! == 0 (
+			goto Config
+		) else (
+			goto AddApp
+		)
+	)
+	if ERRORLEVEL == 1 (goto AddLogins)
+
+	:AddApp
+	set /p tmp="Please input Application Name: "
+	echo set "appname[!i_appcount!]=!tmp!" >> config.cmd
+	set /p tmp="Please input ID Application: "
+	echo set "appid[!i_appcount!]=!tmp!" >> config.cmd
+	choice /T 3 /D N /M "Would you like to add another Application"
+	set /A i_idcount=%i_appcount%+1
+	if ERRORLEVEL == 2 ( goto Applicationmanager )
+	if ERRORLEVEL == 1 ( goto AddApp )
 )
 timeout /T 1 > nul
-:Import Config
+
+:Config Import
 call config.cmd
+:History Import
+call history.cmd
+
 echo.
 echo The following options are available:
-set i_count=0
+set i_idcount=0
 :Read Array
-IF [!id[%i_count%]!] == [] (
+IF [!id[%i_idcount%]!] == [] (
 	echo X.^> Add another account
 ) else (
-	echo %i_count%.^> !id[%i_count%]!
-	set /A i_count=%i_count%+1
+	echo %i_idcount%.^> !id[%i_idcount%]!
+	set /A i_idcount=%i_idcount%+1
 	goto Read Array
 )
 echo.
-:Account picker
 
+:Account picker
 set proto=X0123456789
-set /A i_choice=%i_count+1
+set /A i_choice=%i_idcount+1
 set choices=!proto:~0,%i_choice%!
 choice /N /T 5 /D %default_id% /C %choices% /M "Your choice: "
-IF %ERRORLEVEL% == 1 ( goto Add Logins )
 set /A pick=%ERRORLEVEL%-2
-IF %ERRORLEVEL% GEQ 2 (
-	set "login=!id[%pick%]!"
-	echo Will now switch account to !login! 
-	echo set "default_id=!pick!" >> config.cmd
-)
+IF ERRORLEVEL == 2 ( goto ChosenOne )
+IF ERRORLEVEL == 1 ( goto AddLogins )
+:ChosenOne
+set "login=!id[%pick%]!"
+echo WIll now switch account to !login!
+set default_id=!pick!
 
-timeout /T 5  > nul
+choice /T 4 /D %default_manager% /m "Start application manager"
+IF ERRORLEVEL == 2 ( 
+	set launchid=3 
+	set default_manager=N
+	goto KillSteam
+)
+IF ERRORLEVEL == 1 ( goto Applicationmanager )
 echo.
 
+:Applicationmanager
+call config.cmd
+echo You can choose one of the following applications:
+set i_appcount=0
+:Apparray
+IF [!appname[%i_appcount%]!] == [] (
+	echo X.^> Add another Application
+) else (
+	echo %i_appcount%.^> !appname[%i_appcount%]!
+	set /A i_appcount=%i_appcount%+1
+	goto Apparray
+)
+echo.
+
+set /A i_appchoice=%i_appcount+1
+set appchoices=!proto:~0,%i_appchoice%!
+choice /N /T 5 /D %default_app% /C %appchoices% /M "Your choice: "
+set /A pick=%ERRORLEVEL%-2
+IF ERRORLEVEL == 2 ( goto ChosenApp)
+IF ERRORLEVEL == 1 ( goto AddApp)
+:ChosenApp	
+set "launchid=!appid[%pick%]!"
+set "launchname=!appname[%pick%]!"
+echo !launchname! will be started now. 
+set default_app=!pick!
+set default_manager=J
+
+:KillSteam
 :Check if Program is running and shut down (first nice then rigorously)
+
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
-IF "%ERRORLEVEL%"=="0" (
+IF "ERRORLEVEL"=="0" (
 	echo Program is running
 	set yup=1
 	@"%SteamLoc%" -shutdown
 	timeout /T 2  > nul
 ) 
+
 tasklist /FI "IMAGENAME eq steam.exe" 2>NUL | find /I /N "steam.exe">NUL
-IF "%ERRORLEVEL%"=="0" (
+IF "ERRORLEVEL"=="0" (
 	echo Attempting force close
 	taskkill /F /IM steam.exe
 	echo Program shut down
@@ -115,6 +180,12 @@ IF "%ERRORLEVEL%"=="0" (
 	)
 )
 
+:HistoryWrite
+echo @echo off > history.cmd
+echo set "default_id=%default_id%" >> history.cmd
+echo set "default_app=%default_app%" >> history.cmd
+echo set "default_manager=%default_manager%" >> history.cmd
+
 :Password (secure)
 set "psCommand=powershell -Command "$pword = read-host 'Enter Password' -AsSecureString ; ^
     $BSTR=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pword); ^
@@ -123,6 +194,8 @@ FOR /f "usebackq delims=" %%p in (`%psCommand%`) DO set password=%%p
 
 :Start Steam with direct Log in
 echo Starting up
-start "" "%SteamLoc%" -login "%login%" "%password%"
+start "" "%SteamLoc%" -login "%login%" "%password%" -applaunch "%launchid%"
 
+timeout /T 5  > nul
+	
 EXIT
