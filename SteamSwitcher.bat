@@ -72,6 +72,8 @@ IF NOT EXIST config.cmd (
 	:AddApp
 	set /p tmp="Please input Application Name: "
 	echo set "appname[!i_appcount!]=!tmp!" >> config.cmd
+	set "appurl=http://steamdb.info/search/?a=app&q=%tmp%"
+	start "" "%appurl%"
 	set /p tmp="Please input ID Application: "
 	echo set "appid[!i_appcount!]=!tmp!" >> config.cmd
 	choice /T 3 /D N /M "Would you like to add another Application"
