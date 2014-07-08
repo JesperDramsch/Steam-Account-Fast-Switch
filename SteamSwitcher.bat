@@ -52,14 +52,6 @@ IF NOT EXIST config.cmd (
 			echo set "SteamLoc=!SteamLoc!" >> config.cmd
 		)
 	)
-	IF NOT EXIST history.cmd (
-		copy /y NUL history.cmd > NUL
-		:Default Choices
-		echo @echo off > history.cmd
-		echo set default_id=X >> history.cmd
-		echo set default_app=X >> history.cmd
-		echo set default_manager=N >> history.cmd
-	)
 	
 	set i_idcount=0
 	set i_appcount=0
@@ -70,9 +62,9 @@ IF NOT EXIST config.cmd (
 	set /A i_idcount=%i_idcount%+1
 	if ERRORLEVEL == 2 (
 		if !firstrun! == 0 (
-			goto Config
-		) else (
 			goto AddApp
+		) else (
+			goto Config
 		)
 	)
 	if ERRORLEVEL == 1 (goto AddLogins)
@@ -83,7 +75,7 @@ IF NOT EXIST config.cmd (
 	set /p tmp="Please input ID Application: "
 	echo set "appid[!i_appcount!]=!tmp!" >> config.cmd
 	choice /T 3 /D N /M "Would you like to add another Application"
-	set /A i_idcount=%i_appcount%+1
+	set /A i_appcount=%i_appcount%+1
 	if ERRORLEVEL == 2 ( goto Applicationmanager )
 	if ERRORLEVEL == 1 ( goto AddApp )
 )
@@ -92,6 +84,13 @@ timeout /T 1 > nul
 :Config Import
 call config.cmd
 :History Import
+IF NOT EXIST history.cmd (
+	copy /y NUL history.cmd > NUL
+	echo @echo off > history.cmd
+	echo set default_id=X >> history.cmd
+	echo set default_app=X >> history.cmd
+	echo set default_manager=N >> history.cmd
+)
 call history.cmd
 
 echo.
@@ -118,7 +117,7 @@ IF ERRORLEVEL == 1 ( goto AddLogins )
 :ChosenOne
 set "login=!id[%pick%]!"
 echo WIll now switch account to !login!
-set default_id=!pick!
+set default_id=%pick%
 
 choice /T 4 /D %default_manager% /m "Start application manager"
 IF ERRORLEVEL == 2 ( 
@@ -153,7 +152,7 @@ IF ERRORLEVEL == 1 ( goto AddApp)
 set "launchid=!appid[%pick%]!"
 set "launchname=!appname[%pick%]!"
 echo !launchname! will be started now. 
-set default_app=!pick!
+set default_app=%pick%
 set default_manager=J
 
 :KillSteam
