@@ -58,6 +58,9 @@ IF NOT EXIST config.cmd (
 	set /p "another=Would you like to add another SteamID (y/n): "
 	set /A i_count=%i_count%+1
 	if "!another!"=="y" (goto Add Logins )
+	
+	:Default Choices
+	set default_id=X
 )
 timeout /T 1 > nul
 :Import Config
@@ -75,25 +78,20 @@ IF [!id[%i_count%]!] == [] (
 )
 echo.
 :Account picker
-set /p "choice=Your choice: "
-IF %choice% == X (
-	goto Add Logins
-) ELSE (
-	IF %choice% GEQ 0 (
-		IF %choice% LEQ %i_count%  (
-			set "login=!id[%choice%]!"
-			echo WIll now switch account to !login!
-		) ELSE (
-			GOTO Wrong Choice
-		)
-	) ELSE (
-		:Wrong Choice
-		echo Your choice is invalid.
-		echo Exiting.
-		timeout /T 5  > nul
-		exit
-	)
+
+set proto=X0123456789
+set /A i_choice=%i_count+1
+set choices=!proto:~0,%i_choice%!
+choice /N /T 5 /D %default_id% /C %choices% /M "Your choice: "
+IF %ERRORLEVEL% == 1 ( goto Add Logins )
+set /A pick=%ERRORLEVEL%-2
+IF %ERRORLEVEL% GEQ 2 (
+	set "login=!id[%pick%]!"
+	echo Will now switch account to !login! 
+	echo set "default_id=!pick!" >> config.cmd
 )
+
+timeout /T 5  > nul
 echo.
 
 :Check if Program is running and shut down (first nice then rigorously)
